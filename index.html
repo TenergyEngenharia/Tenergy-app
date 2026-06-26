@@ -71,16 +71,17 @@
             padding: 5px;
         }
 
+       /* ── LOGOS DA TOPBAR ── */
         .logo-container img {
-            max-height: 40px;
-            display: block;
-        }
+         max-height: 40px;
+    }
 
-        /* Controle das logos por tema */
-        .logo-clara  { display: block; }
-        .logo-escura { display: none; }
-        [data-theme="dark"] .logo-clara  { display: none; }
-        [data-theme="dark"] .logo-escura { display: block; }
+    /* Controle das logos por tema (com especificidade alta) */
+    .logo-container .logo-clara  { display: block; }
+    .logo-container .logo-escura { display: none; }
+
+    [data-theme="dark"] .logo-container .logo-clara  { display: none; }
+    [data-theme="dark"] .logo-container .logo-escura { display: block; }
 
         /* Dark Theme Switch na Topbar */
         .theme-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
