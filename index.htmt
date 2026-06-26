@@ -78,15 +78,16 @@
 
         /* Controle das logos por tema */
         .logo-clara  { display: block; }
-        .logo-escura { display: none;  }
-        [data-theme="dark"] .logo-clara  { display: none;  }
+        .logo-escura { display: none; }
+        [data-theme="dark"] .logo-clara  { display: none; }
         [data-theme="dark"] .logo-escura { display: block; }
 
         /* Dark Theme Switch na Topbar */
         .theme-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
         .theme-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
         .slider {
-            position: absolute; inset: 0;
+            position: absolute;
+            inset: 0;
             background: #ccc; border-radius: 24px;
             cursor: pointer; transition: background 0.25s;
         }
@@ -141,7 +142,8 @@
 
         /* Overlay escuro quando o menu abre no celular */
         .overlay {
-            position: fixed; top: 60px; left: 0;
+            position: fixed;
+            top: 60px; left: 0;
             width: 100vw; height: calc(100vh - 60px);
             background: rgba(0,0,0,0.5);
             opacity: 0; pointer-events: none;
@@ -156,9 +158,10 @@
             padding: 15px;
         }
 
-        /* Módulos SPA — apenas o 'active' aparece */
-        .module { display: none; animation: fadeIn 0.3s; }
-        .module.active { display: block; }
+        /* Módulos SPA — apenas o 'active' aparece (BUG 1 CORRIGIDO) */
+        .module { display: none; }
+        .module.active { display: block; animation: fadeIn 0.3s; }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -209,7 +212,7 @@
             transition: background 0.25s, color 0.25s, border-color 0.25s;
         }
 
-        /* ── RADIO GROUPS (do V1) ────────────────────────────────── */
+        /* ── RADIO GROUPS ────────────────────────────────── */
         .radio-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
 
         .radio-option {
@@ -226,7 +229,7 @@
 
         .radio-option input { width: 20px; height: 20px; }
 
-        /* ── ACTIVITY MATRIX (do V1) ─────────────────────────────── */
+        /* ── ACTIVITY MATRIX ─────────────────────────────── */
         .matrix-row {
             background: var(--row-bg);
             padding: 10px;
@@ -295,7 +298,6 @@
 </head>
 <body>
 
-    <!-- ══ TOPBAR ════════════════════════════════════════════════════ -->
     <header class="topbar">
         <div style="display: flex; align-items: center; gap: 15px;">
             <button class="hamburger" onclick="toggleSidebar()" aria-label="Abrir menu">☰</button>
@@ -314,7 +316,6 @@
         </div>
     </header>
 
-    <!-- ══ SIDEBAR ═══════════════════════════════════════════════════ -->
     <nav class="sidebar" id="sidebar">
         <a class="menu-item active-menu" onclick="navTo('modulo-inicio', this)">
             <span class="menu-icon">🏠</span> Início
@@ -340,10 +341,8 @@
     </nav>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-    <!-- ══ CONTEÚDO PRINCIPAL ════════════════════════════════════════ -->
     <main class="main-content" id="main-content">
 
-        <!-- ── MÓDULO: INÍCIO ─────────────────────────────────────── -->
         <section id="modulo-inicio" class="module active">
             <div class="card inicio-card">
                 <img src="logo-simbolo.png" alt="Símbolo Tenergy">
@@ -352,14 +351,12 @@
             </div>
         </section>
 
-        <!-- ── MÓDULO: RDO DIÁRIO (V1 completo) ──────────────────── -->
         <section id="modulo-rdo" class="module">
 
             <button class="btn btn-danger" style="font-size: 0.9rem; padding: 10px; margin-top: 0; margin-bottom: 15px;" onclick="limparFormulario()">
                 LIMPAR FORMULÁRIO (Resetar Padrão)
             </button>
 
-            <!-- 1. IDENTIFICAÇÃO -->
             <div class="card">
                 <h2>1. IDENTIFICAÇÃO</h2>
 
@@ -373,7 +370,6 @@
                 <input type="text" id="operador" placeholder="Quem está preenchendo o RDO" oninput="salvarOffline()">
             </div>
 
-            <!-- 3. CHECKLIST INICIAL -->
             <div class="card">
                 <h2>3. CHECKLIST INICIAL</h2>
 
@@ -406,13 +402,11 @@
                 </div>
             </div>
 
-            <!-- 4.1 STATUS DAS ATIVIDADES -->
             <div class="card">
                 <h2>4.1 STATUS DAS ATIVIDADES</h2>
                 <div id="container-atividades"></div>
             </div>
 
-            <!-- REGISTRO DE ATIVIDADES -->
             <div class="card">
                 <h2>REGISTRO DE ATIVIDADES</h2>
 
@@ -432,14 +426,12 @@
                 <textarea id="previsao" rows="3" oninput="salvarOffline()"></textarea>
             </div>
 
-            <!-- BOTÃO EXPORTAR -->
             <button class="btn btn-export" onclick="exportarParaGitTenergy()">
-                📥 GERAR ARQUIVO RDO (Fazer Download)
+                 📥 GERAR ARQUIVO RDO (Fazer Download)
             </button>
 
         </section>
 
-        <!-- ── MÓDULO: COMISSIONAMENTO CARREGADORES (placeholder) ── -->
         <section id="modulo-comiss-carregador" class="module">
             <div class="card placeholder-card">
                 <h2>Comissionamento de Carregadores</h2>
@@ -447,7 +439,6 @@
             </div>
         </section>
 
-        <!-- ── MÓDULO: PREVENTIVA CARREGADORES (placeholder) ─────── -->
         <section id="modulo-prev-carregador" class="module">
             <div class="card placeholder-card">
                 <h2>Preventiva de Carregadores</h2>
@@ -455,7 +446,6 @@
             </div>
         </section>
 
-        <!-- ── MÓDULO: TELEMETRIA CARREGADORES (placeholder) ─────── -->
         <section id="modulo-telem-carregador" class="module">
             <div class="card placeholder-card">
                 <h2>Telemetria de Carregadores</h2>
@@ -463,7 +453,6 @@
             </div>
         </section>
 
-        <!-- ── MÓDULO: TELEMETRIA ÁGUA (placeholder) ─────────────── -->
         <section id="modulo-telem-agua" class="module">
             <div class="card placeholder-card">
                 <h2>Telemetria de Água</h2>
@@ -471,7 +460,6 @@
             </div>
         </section>
 
-        <!-- ── MÓDULO: HISTÓRICO LOCAL (placeholder) ─────────────── -->
         <section id="modulo-historico" class="module">
             <div class="card placeholder-card">
                 <h2>Histórico Local</h2>
@@ -531,7 +519,7 @@
         }
 
         aplicarTema(localStorage.getItem('git_tenergy_tema') === 'dark');
-
+        
         toggle.addEventListener('change', () => {
             const escuro = toggle.checked;
             localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light');
@@ -539,7 +527,7 @@
         });
 
         /* ─────────────────────────────────────────────────────────────
-           MATRIZ DE ATIVIDADES (V1 — completo)
+           MATRIZ DE ATIVIDADES
         ───────────────────────────────────────────────────────────── */
         const atividades = [
             "Mobilização",
@@ -569,10 +557,10 @@
             if (classe) row.classList.add(classe);
         }
 
-        // Renderização dinâmica da matriz
+        // Renderização dinâmica da matriz (BUG 2 CORRIGIDO)
         const container = document.getElementById('container-atividades');
         atividades.forEach((ativ, index) => {
-            container.innerHTML += `
+            container.insertAdjacentHTML('beforeend', `
                 <div class="matrix-row status-nao-iniciada" id="row_${index}">
                     <div class="matrix-title">${ativ}</div>
                     <select id="ativ_${index}" onchange="atualizarCorAtividade(${index}); salvarOffline()">
@@ -581,11 +569,11 @@
                         <option value="Concluída">Concluída</option>
                         <option value="Interrompida">Interrompida</option>
                     </select>
-                </div>`;
+                </div>`);
         });
 
         /* ─────────────────────────────────────────────────────────────
-           SALVAMENTO OFFLINE (LocalStorage) — V1 completo
+           SALVAMENTO OFFLINE (LocalStorage)
         ───────────────────────────────────────────────────────────── */
         function salvarOffline() {
             const dados = {
@@ -606,7 +594,7 @@
         }
 
         /* ─────────────────────────────────────────────────────────────
-           RESTAURAÇÃO DO CACHE AO CARREGAR — V1 completo
+           RESTAURAÇÃO DO CACHE AO CARREGAR
         ───────────────────────────────────────────────────────────── */
         window.addEventListener('load', () => {
             const raw = localStorage.getItem('git_tenergy_cache');
@@ -643,7 +631,7 @@
         });
 
         /* ─────────────────────────────────────────────────────────────
-           LIMPAR FORMULÁRIO — V1 completo
+           LIMPAR FORMULÁRIO
         ───────────────────────────────────────────────────────────── */
         function limparFormulario() {
             if (confirm("Tem certeza que deseja limpar todo o formulário e voltar ao padrão?")) {
@@ -653,7 +641,7 @@
         }
 
         /* ─────────────────────────────────────────────────────────────
-           EXPORTAR CSV — V1 completo (nenhuma regra de negócio alterada)
+           EXPORTAR CSV
         ───────────────────────────────────────────────────────────── */
         function exportarParaGitTenergy() {
             const local    = document.getElementById('local_obra').value.toUpperCase().trim();
@@ -686,7 +674,7 @@
             const csvValues = [
                 dataObra, local, op.replace(/,/g, " "), clima, fer, seg,
                 esc(ocor), esc(foraEsc), esc(obs), esc(interf), esc(prev)
-            ];
+             ];
 
             atividades.forEach((ativ, idx) => {
                 csvHeaders.push(`##### ${ativ}`);
