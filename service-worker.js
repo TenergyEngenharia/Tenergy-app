@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tenergy-rdo-va3';
+const CACHE_NAME = 'tenergy-rdo-va4';
 
 const ASSETS = [
   'index.html',
