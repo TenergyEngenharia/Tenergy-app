@@ -73,7 +73,7 @@
 
        /* ── LOGOS DA TOPBAR ── */
         .logo-container img {
-            max-height: 40px;
+         max-height: 40px;
         }
 
         .logo-container .logo-clara  { display: block; }
@@ -213,6 +213,7 @@
 
         /* ── RADIO GROUPS ────────────────────────────────── */
         .radio-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+
         .radio-option {
             display: flex;
             align-items: center;
@@ -224,9 +225,30 @@
             cursor: pointer;
             transition: background 0.25s;
         }
+
         .radio-option input { width: 20px; height: 20px; }
 
-        /* ── TAB SYSTEM (NOVO) ───────────────────────────────────── */
+        /* ── ACTIVITY MATRIX (RDO) ─────────────────────────────── */
+        .matrix-row {
+            background: var(--row-bg);
+            padding: 10px;
+            border-left: 4px solid var(--border);
+            border-top: 1px solid var(--row-border);
+            border-right: 1px solid var(--row-border);
+            border-bottom: 1px solid var(--row-border);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            transition: background 0.25s, border-left-color 0.25s;
+        }
+
+        .matrix-row.status-concluida    { border-left-color: #22703f; }
+        .matrix-row.status-andamento    { border-left-color: #d97706; }
+        .matrix-row.status-nao-iniciada { border-left-color: #9ca3af; }
+        .matrix-row.status-interrompida { border-left-color: #bc2828; }
+
+        .matrix-title { font-weight: bold; color: var(--muted); margin-bottom: 5px; }
+
+        /* ── TAB SYSTEM (PREVENTIVA) ───────────────────────────────────── */
         .tabs-container {
             display: flex;
             gap: 10px;
@@ -288,18 +310,38 @@
             margin-top: 10px;
             transition: background 0.2s;
         }
+
         .btn-primary { background: var(--verde); }
         .btn-primary:hover { background: var(--verde-hover); }
+
         .btn-export { background: #007bff; }
         .btn-export:hover { background: #0069d9; }
+
         .btn-danger { background: var(--vermelho); }
         .btn-danger:hover { background: #9e2020; }
 
-        .inicio-card { text-align: center; padding: 40px 20px; }
-        .inicio-card img { max-height: 80px; margin-bottom: 20px; }
+        /* ── INÍCIO CARD ─────────────────────────────────────────── */
+        .inicio-card {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .inicio-card img {
+            max-height: 80px;
+            margin-bottom: 20px;
+        }
+
         .inicio-card h2 { border-bottom: none; padding-bottom: 0; }
-        .inicio-card p { color: var(--muted); margin-top: 10px; }
-        .placeholder-card p { color: var(--muted); }
+
+        .inicio-card p {
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        /* ── PLACEHOLDER CARDS ───────────────────────────────────── */
+        .placeholder-card p {
+            color: var(--muted);
+        }
     </style>
 </head>
 <body>
@@ -312,6 +354,7 @@
                 <img src="logo-branca.png" class="logo-escura" alt="Tenergy">
             </div>
         </div>
+
         <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 0.8rem; font-weight: bold; color: var(--muted);">Tema</span>
             <label class="theme-switch" aria-label="Alternar tema escuro">
@@ -329,7 +372,7 @@
             <span class="menu-icon">📝</span> RDO Diário
         </a>
         <a class="menu-item" onclick="navTo('modulo-comiss-carregador', this)">
-            <span class="menu-icon">🔌</span> Comissionamento
+            <span class="menu-icon">🔌</span> Comissionamento Carregadores
         </a>
         <a class="menu-item" onclick="navTo('modulo-prev-carregador', this)">
             <span class="menu-icon">⚙️</span> Preventiva Carregadores
@@ -357,21 +400,84 @@
         </section>
 
         <section id="modulo-rdo" class="module">
-            <button class="btn btn-danger" style="font-size: 0.9rem; padding: 10px; margin-top: 0; margin-bottom: 15px;" onclick="limparFormularioRDO()">
+
+            <button class="btn btn-danger" style="font-size: 0.9rem; padding: 10px; margin-top: 0; margin-bottom: 15px;" onclick="limparFormulario()">
                 LIMPAR FORMULÁRIO (Resetar Padrão)
             </button>
+
             <div class="card">
                 <h2>1. IDENTIFICAÇÃO</h2>
-                <label class="required">Local de Obra (Base e Concessão):</label>
-                <input type="text" id="local_obra" placeholder="Ex: SAU01" oninput="salvarOfflineRDO()">
-                <label class="required">Data da Obra:</label>
-                <input type="date" id="data_obra" onchange="salvarOfflineRDO()">
-                <label class="required">Nome do Operador:</label>
-                <input type="text" id="operador" placeholder="Quem está preenchendo o RDO" oninput="salvarOfflineRDO()">
+
+                <label class="required" for="local_obra">Local de Obra (Base e Concessão):</label>
+                <input type="text" id="local_obra" placeholder="Ex: SAU01" oninput="salvarOffline()">
+
+                <label class="required" for="data_obra">Data da Obra:</label>
+                <input type="date" id="data_obra" onchange="salvarOffline()">
+
+                <label class="required" for="operador">Nome do Operador (Preenchendo no campo):</label>
+                <input type="text" id="operador" placeholder="Quem está preenchendo o RDO" oninput="salvarOffline()">
             </div>
-            <div class="card placeholder-card">
-                <p><i>(Campos do RDO recolhidos neste template para focar na Preventiva)</i></p>
+
+            <div class="card">
+                <h2>3. CHECKLIST INICIAL</h2>
+
+                <label class="required" for="clima">Condições Climáticas:</label>
+                <select id="clima" onchange="salvarOffline()">
+                    <option value="Ensolarado">Ensolarado</option>
+                    <option value="Nublado">Nublado</option>
+                    <option value="Chuva">Chuva</option>
+                    <option value="Instável">Instável</option>
+                </select>
+
+                <label class="required">Ferramentas disponíveis e em condições de trabalho?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="ferramentas" value="Sim" checked onclick="salvarOffline()"> Sim
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="ferramentas" value="Não" onclick="salvarOffline()"> Não
+                    </label>
+                </div>
+
+                <label class="required">Condições de Segurança Atendidas?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="seguranca" value="Sim" checked onclick="salvarOffline()"> Sim
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="seguranca" value="Não" onclick="salvarOffline()"> Não
+                    </label>
+                </div>
             </div>
+
+            <div class="card">
+                <h2>4.1 STATUS DAS ATIVIDADES</h2>
+                <div id="container-atividades"></div>
+            </div>
+
+            <div class="card">
+                <h2>REGISTRO DE ATIVIDADES</h2>
+
+                <label for="ocorrencias">4.2 Ocorrências Registradas:</label>
+                <textarea id="ocorrencias" rows="3" oninput="salvarOffline()">Não foram registradas ocorrências no período.</textarea>
+
+                <label for="fora_escopo">4.3 Atividades fora do escopo:</label>
+                <textarea id="fora_escopo" rows="3" oninput="salvarOffline()">Sem atividades fora do escopo</textarea>
+
+                <label for="observacoes">4.4 Observações do Operador:</label>
+                <textarea id="observacoes" rows="3" oninput="salvarOffline()">Sem observações</textarea>
+
+                <label for="interferencias">4.5 Interferências a serem tratadas pelo Cliente:</label>
+                <textarea id="interferencias" rows="3" oninput="salvarOffline()">Nenhuma interferência externa mapeada.</textarea>
+
+                <label class="required" for="previsao">4.6 Atividades previstas para o próximo dia:</label>
+                <textarea id="previsao" rows="3" oninput="salvarOffline()"></textarea>
+            </div>
+
+            <button class="btn btn-export" onclick="exportarParaGitTenergy()">
+                 📥 GERAR ARQUIVO RDO (Fazer Download)
+            </button>
+
         </section>
 
         <section id="modulo-prev-carregador" class="module">
@@ -417,26 +523,49 @@
         </section>
 
         <section id="modulo-comiss-carregador" class="module">
-            <div class="card placeholder-card"><h2>Comissionamento de Carregadores</h2><p>Em desenvolvimento...</p></div>
+            <div class="card placeholder-card">
+                <h2>Comissionamento de Carregadores</h2>
+                <p>Formulário de testes elétricos, isolação, torque e startup.</p>
+            </div>
         </section>
+
         <section id="modulo-telem-carregador" class="module">
-            <div class="card placeholder-card"><h2>Telemetria de Carregadores</h2><p>Em desenvolvimento...</p></div>
+            <div class="card placeholder-card">
+                <h2>Telemetria de Carregadores</h2>
+                <p>Parâmetros de rede, sinal de modem e testes de comunicação.</p>
+            </div>
         </section>
+
         <section id="modulo-telem-agua" class="module">
-            <div class="card placeholder-card"><h2>Telemetria de Água</h2><p>Em desenvolvimento...</p></div>
+            <div class="card placeholder-card">
+                <h2>Telemetria de Água</h2>
+                <p>Poço, reservatório, turbidez e nível de cloro.</p>
+            </div>
         </section>
+
         <section id="modulo-historico" class="module">
-            <div class="card placeholder-card"><h2>Histórico Local</h2><p>Em desenvolvimento...</p></div>
+            <div class="card placeholder-card">
+                <h2>Histórico Local</h2>
+                <p>Abaixo estão os relatórios salvos no aparelho:</p>
+                <div style="background: var(--bg); padding: 15px; border-radius: 6px; margin-top: 15px;">
+                    <i>(Nenhum relatório salvo ainda)</i>
+                </div>
+            </div>
         </section>
 
     </main>
 
     <script>
         /* ─────────────────────────────────────────────────────────────
-           CORE: UI, Sidebar & Temas
+           SERVICE WORKER
         ───────────────────────────────────────────────────────────── */
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); }
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
 
+        /* ─────────────────────────────────────────────────────────────
+           SIDEBAR & NAVEGAÇÃO SPA & TEMA
+        ───────────────────────────────────────────────────────────── */
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
 
@@ -448,27 +577,160 @@
         function navTo(moduleId, elementoClicado) {
             document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active-menu'));
+
             document.getElementById(moduleId).classList.add('active');
             elementoClicado.classList.add('active-menu');
-            if (window.innerWidth < 768) toggleSidebar();
+
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
             window.scrollTo(0, 0);
         }
 
         const toggle = document.getElementById('theme-toggle');
+        const html   = document.documentElement;
+
         function aplicarTema(escuro) {
-            document.documentElement.setAttribute('data-theme', escuro ? 'dark' : 'light');
+            html.setAttribute('data-theme', escuro ? 'dark' : 'light');
             toggle.checked = escuro;
         }
+
         aplicarTema(localStorage.getItem('git_tenergy_tema') === 'dark');
+        
         toggle.addEventListener('change', () => {
             const escuro = toggle.checked;
             localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light');
             aplicarTema(escuro);
         });
 
-        /* ─────────────────────────────────────────────────────────────
-           MÓDULO PREVENTIVA: DADOS E ESTRUTURA
-        ───────────────────────────────────────────────────────────── */
+        /* =========================================================================
+           LÓGICA DO MÓDULO: RDO DIÁRIO
+           ========================================================================= */
+        const atividades = [
+            "Mobilização",
+            "Abertura e Preparo do solo",
+            "Instalação de eletrodutos",
+            "Base de concreto/suporte carregadores",
+            "Fixação dos carregadores",
+            "Conexões elétricas",
+            "Configuração e startup",
+            "Recomposição do solo"
+        ];
+
+        const STATUS_CLASSES = {
+            "Concluída":    "status-concluida",
+            "Em andamento": "status-andamento",
+            "Não iniciada": "status-nao-iniciada",
+            "Interrompida": "status-interrompida"
+        };
+
+        function atualizarCorAtividade(idx) {
+            const select = document.getElementById(`ativ_${idx}`);
+            const row    = document.getElementById(`row_${idx}`);
+            if (!select || !row) return;
+
+            Object.values(STATUS_CLASSES).forEach(c => row.classList.remove(c));
+            const classe = STATUS_CLASSES[select.value];
+            if (classe) row.classList.add(classe);
+        }
+
+        // Renderização dinâmica da matriz do RDO
+        const container = document.getElementById('container-atividades');
+        atividades.forEach((ativ, index) => {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="matrix-row status-nao-iniciada" id="row_${index}">
+                    <div class="matrix-title">${ativ}</div>
+                    <select id="ativ_${index}" onchange="atualizarCorAtividade(${index}); salvarOffline()">
+                        <option value="Não iniciada">Não iniciada</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluída">Concluída</option>
+                        <option value="Interrompida">Interrompida</option>
+                    </select>
+                </div>`);
+        });
+
+        function salvarOffline() {
+            const dados = {
+                local_obra:     document.getElementById('local_obra').value,
+                data_obra:      document.getElementById('data_obra').value,
+                operador:       document.getElementById('operador').value,
+                clima:          document.getElementById('clima').value,
+                ferramentas:    document.querySelector('input[name="ferramentas"]:checked').value,
+                seguranca:      document.querySelector('input[name="seguranca"]:checked').value,
+                ocorrencias:    document.getElementById('ocorrencias').value,
+                fora_escopo:    document.getElementById('fora_escopo').value,
+                observacoes:    document.getElementById('observacoes').value,
+                interferencias: document.getElementById('interferencias').value,
+                previsao:       document.getElementById('previsao').value,
+                status_ativ:    atividades.map((_, idx) => document.getElementById(`ativ_${idx}`).value)
+            };
+            localStorage.setItem('git_tenergy_cache', JSON.stringify(dados));
+        }
+
+        function limparFormulario() {
+            if (confirm("Tem certeza que deseja limpar todo o formulário de RDO e voltar ao padrão?")) {
+                localStorage.removeItem('git_tenergy_cache');
+                window.location.reload();
+            }
+        }
+
+        function exportarParaGitTenergy() {
+            const local    = document.getElementById('local_obra').value.toUpperCase().trim();
+            const dataObra = document.getElementById('data_obra').value;
+            const op       = document.getElementById('operador').value.trim();
+            const prev     = document.getElementById('previsao').value.trim();
+
+            if (!local || !dataObra || !op || !prev) {
+                alert("ERRO DE EXPORTAÇÃO: Preencha todos os campos obrigatórios (marcados com *) antes de gerar o arquivo.");
+                return;
+            }
+
+            const clima   = document.getElementById('clima').value;
+            const fer     = document.querySelector('input[name="ferramentas"]:checked').value;
+            const seg     = document.querySelector('input[name="seguranca"]:checked').value;
+            const ocor    = document.getElementById('ocorrencias').value;
+            const foraEsc = document.getElementById('fora_escopo').value;
+            const obs     = document.getElementById('observacoes').value;
+            const interf  = document.getElementById('interferencias').value;
+
+            const esc = s => `"${s.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
+            const csvHeaders = [
+                "Data da Obra", "Local da Obra", "Nome do Operador", "Condições Climáticas",
+                "Ferramentas disponíveis", "Condições de Segurança", "Ocorrências registradas",
+                "Atividades fora do escopo", "Observações do Operador", "Interferências a serem tratadas",
+                "Atividades previstas para o próximo dia"
+            ];
+
+            const csvValues = [
+                dataObra, local, op.replace(/,/g, " "), clima, fer, seg,
+                esc(ocor), esc(foraEsc), esc(obs), esc(interf), esc(prev)
+             ];
+
+            atividades.forEach((ativ, idx) => {
+                csvHeaders.push(`##### ${ativ}`);
+                csvValues.push(document.getElementById(`ativ_${idx}`).value);
+            });
+
+            const csvContent = csvHeaders.join(",") + "\r\n" + csvValues.join(",") + "\r\n";
+            const blob = new Blob(
+                [new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent],
+                { type: "text/csv;charset=utf-8;" }
+            );
+
+            const url  = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `RDO_${local}_${dataObra}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        /* =========================================================================
+           LÓGICA DO MÓDULO: PREVENTIVA CARREGADORES
+           ========================================================================= */
         const tensoes12 = [
             "Montante Tensão R-N", "Montante Tensão S-N", "Montante Tensão T-N", 
             "Montante Tensão R-S", "Montante Tensão S-T", "Montante Tensão T-R",
@@ -488,7 +750,7 @@
             {
                 titulo: "Verificações Iniciais",
                 itens: [
-                    "Ainda com equipamento ligado verificar na tela de erros e alarmes se existe algum registro...",
+                    "Ainda com equipamento ligado verificar na tela de erros e alarmes se existe algum registro, caso haja algum novo alerta registrar o check list e notificar a equipe da Evolution Mobility",
                     "Desligar alimentação geral do SAVE (Disjuntor no QDG - 100A Saus, 63A Praças)",
                     "Validar conforme NR10 a desenergização a jusante do disjuntor geral",
                     "Abrir tampa de acesso aos bornes do autotransformador",
@@ -526,9 +788,6 @@
             }
         ];
 
-        /* ─────────────────────────────────────────────────────────────
-           MÓDULO PREVENTIVA: RENDERIZAÇÃO E NAVEGAÇÃO (TABS)
-        ───────────────────────────────────────────────────────────── */
         function switchPrevTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -587,7 +846,6 @@
             cChk.innerHTML = htmlChk;
         }
 
-        // Bloqueia o input se a unidade for "Sem Medida"
         function verificarSemMedida(idBase) {
             const input = document.getElementById(`${idBase}_val`);
             const select = document.getElementById(`${idBase}_un`);
@@ -599,7 +857,6 @@
             }
         }
 
-        // Muda a cor da borda dependendo do status OK/NOK
         function atualizarCorChecklist(idBase) {
             const row = document.getElementById(`${idBase}_row`);
             const val = document.getElementById(`${idBase}_status`).value;
@@ -609,9 +866,6 @@
             if (val === '-') row.classList.add('status-na');
         }
 
-        /* ─────────────────────────────────────────────────────────────
-           MÓDULO PREVENTIVA: OFFLINE STORAGE
-        ───────────────────────────────────────────────────────────── */
         function salvarOfflinePrev() {
             const dados = {
                 base: document.getElementById('prev_base').value,
@@ -645,51 +899,13 @@
             localStorage.setItem('git_tenergy_prev_cache', JSON.stringify(dados));
         }
 
-        function carregarOfflinePrev() {
-            const raw = localStorage.getItem('git_tenergy_prev_cache');
-            if (!raw) return;
-            const d = JSON.parse(raw);
-
-            if (d.base) document.getElementById('prev_base').value = d.base;
-            if (d.serie) document.getElementById('prev_serie').value = d.serie;
-            if (d.data) document.getElementById('prev_data').value = d.data;
-            if (d.tecnico) document.getElementById('prev_tecnico').value = d.tecnico;
-
-            if (d.medicoes) {
-                Object.keys(d.medicoes).forEach(id => {
-                    const elVal = document.getElementById(`${id}_val`);
-                    const elUn  = document.getElementById(`${id}_un`);
-                    if (elVal && elUn) {
-                        elVal.value = d.medicoes[id].val;
-                        elUn.value = d.medicoes[id].un;
-                        verificarSemMedida(id);
-                    }
-                });
-            }
-
-            if (d.checklist) {
-                Object.keys(d.checklist).forEach(id => {
-                    const elStatus = document.getElementById(`${id}_status`);
-                    const elObs    = document.getElementById(`${id}_obs`);
-                    if (elStatus && elObs) {
-                        elStatus.value = d.checklist[id].status;
-                        elObs.value = d.checklist[id].obs;
-                        atualizarCorChecklist(id);
-                    }
-                });
-            }
-        }
-
         function limparFormularioPrev() {
-            if (confirm("Tem certeza que deseja apagar os dados de MEDIÇÕES e CHECKLIST?")) {
+            if (confirm("Tem certeza que deseja apagar os dados de MEDIÇÕES e CHECKLIST da Preventiva?")) {
                 localStorage.removeItem('git_tenergy_prev_cache');
                 window.location.reload();
             }
         }
 
-        /* ─────────────────────────────────────────────────────────────
-           MÓDULO PREVENTIVA: EXPORTAÇÃO CSV
-        ───────────────────────────────────────────────────────────── */
         function validarCabecalhoPrev() {
             const b = document.getElementById('prev_base').value.trim();
             const s = document.getElementById('prev_serie').value.trim();
@@ -706,7 +922,6 @@
             const cab = validarCabecalhoPrev();
             if (!cab) return;
 
-            // Validação de preenchimento
             let falha = false;
             estruturaMedicoes.forEach((g, gIdx) => {
                 g.itens.forEach((_, iIdx) => {
@@ -787,13 +1002,78 @@
             URL.revokeObjectURL(url);
         }
 
-        /* ─────────────────────────────────────────────────────────────
-           INICIALIZAÇÃO GLOBAL
-        ───────────────────────────────────────────────────────────── */
+        /* =========================================================================
+           INICIALIZAÇÃO GLOBAL ON LOAD (RDO e PREVENTIVA)
+           ========================================================================= */
         window.addEventListener('load', () => {
-            renderPreventivaUI(); // Gera o HTML da Preventiva
-            carregarOfflinePrev(); // Restaura cache da Preventiva
-            // Lógica antiga do RDO seria restaurada aqui também, omitida por foco no pedido.
+            // 1. Inicia Lógica do RDO (Restauração de Cache)
+            const rawRDO = localStorage.getItem('git_tenergy_cache');
+            if (rawRDO) {
+                const d = JSON.parse(rawRDO);
+                document.getElementById('local_obra').value     = d.local_obra    || '';
+                document.getElementById('data_obra').value      = d.data_obra     || '';
+                document.getElementById('operador').value       = d.operador      || '';
+                document.getElementById('clima').value          = d.clima         || 'Ensolarado';
+                document.getElementById('ocorrencias').value    = d.ocorrencias   || 'Não foram registradas ocorrências no período.';
+                document.getElementById('fora_escopo').value    = d.fora_escopo   || 'Sem atividades fora do escopo';
+                document.getElementById('observacoes').value    = d.observacoes   || 'Sem observações';
+                document.getElementById('interferencias').value = d.interferencias || 'Nenhuma interferência externa mapeada.';
+                document.getElementById('previsao').value       = d.previsao      || '';
+
+                if (d.ferramentas) {
+                    const el = document.querySelector(`input[name="ferramentas"][value="${d.ferramentas}"]`);
+                    if (el) el.checked = true;
+                }
+                if (d.seguranca) {
+                    const el = document.querySelector(`input[name="seguranca"][value="${d.seguranca}"]`);
+                    if (el) el.checked = true;
+                }
+                if (d.status_ativ) {
+                    d.status_ativ.forEach((val, idx) => {
+                        const el = document.getElementById(`ativ_${idx}`);
+                        if (el) {
+                            el.value = val;
+                            atualizarCorAtividade(idx);
+                        }
+                    });
+                }
+            }
+
+            // 2. Inicia Lógica da Preventiva (Renderização e Restauração)
+            renderPreventivaUI();
+            
+            const rawPrev = localStorage.getItem('git_tenergy_prev_cache');
+            if (rawPrev) {
+                const p = JSON.parse(rawPrev);
+                if (p.base) document.getElementById('prev_base').value = p.base;
+                if (p.serie) document.getElementById('prev_serie').value = p.serie;
+                if (p.data) document.getElementById('prev_data').value = p.data;
+                if (p.tecnico) document.getElementById('prev_tecnico').value = p.tecnico;
+
+                if (p.medicoes) {
+                    Object.keys(p.medicoes).forEach(id => {
+                        const elVal = document.getElementById(`${id}_val`);
+                        const elUn  = document.getElementById(`${id}_un`);
+                        if (elVal && elUn) {
+                            elVal.value = p.medicoes[id].val;
+                            elUn.value = p.medicoes[id].un;
+                            verificarSemMedida(id);
+                        }
+                    });
+                }
+
+                if (p.checklist) {
+                    Object.keys(p.checklist).forEach(id => {
+                        const elStatus = document.getElementById(`${id}_status`);
+                        const elObs    = document.getElementById(`${id}_obs`);
+                        if (elStatus && elObs) {
+                            elStatus.value = p.checklist[id].status;
+                            elObs.value = p.checklist[id].obs;
+                            atualizarCorChecklist(id);
+                        }
+                    });
+                }
+            }
         });
     </script>
 </body>
