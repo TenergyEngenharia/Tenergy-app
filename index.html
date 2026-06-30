@@ -765,8 +765,17 @@
         const tensoes6 = tensoes12.slice(0, 6);
         const correntes = ["Corrente R", "Corrente S", "Corrente T"];
 
+        // NOVO: campo "Tensão nos polos disjuntores" — tipo 'polo' (OK/NOK + Observações)
+        // Unificado em um único item (antes eram 3: Polo R, Polo S, Polo T)
+        const polos = ["Tensão nos polos disjuntores"];
+
         const estruturaMedicoes = [
-            { titulo: "Disjuntor Geral SAVE", itens: tensoes12.map(i => ({ nome: i, tipo: 'V' })).concat(correntes.map(i => ({ nome: i, tipo: 'A' }))) },
+            {
+                titulo: "Disjuntor Geral SAVE",
+                itens: tensoes12.map(i => ({ nome: i, tipo: 'V' }))
+                    .concat(correntes.map(i => ({ nome: i, tipo: 'A' })))
+                    .concat(polos.map(i => ({ nome: i, tipo: 'polo' }))) // NOVO: inserido após as correntes R/S/T
+            },
             { titulo: "IDR (Interno ao totem do SAVE)", itens: tensoes12.map(i => ({ nome: i, tipo: 'V' })).concat(correntes.map(i => ({ nome: i, tipo: 'A' }))) },
             { titulo: "Disjuntor Interno SAVE", itens: tensoes6.map(i => ({ nome: i, tipo: 'V' })) }
         ];
@@ -830,16 +839,35 @@
                     const idBase = `med_${gIdx}_${iIdx}`;
                     const opcoesV = `<option value="V">V</option><option value="kV">kV</option><option value="mV">mV</option><option value="-">- (Sem medida)</option>`;
                     const opcoesA = `<option value="A">A</option><option value="mA">mA</option><option value="uA">uA</option><option value="-">- (Sem medida)</option>`;
-                    htmlMed += `
-                        <div class="measure-row" id="${idBase}_row">
-                            <div class="measure-title">${item.nome}</div>
-                            <div class="measure-inputs">
-                                <input type="number" id="${idBase}_val" placeholder="Valor numérico" oninput="atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
-                                <select id="${idBase}_un" onchange="verificarSemMedida('${idBase}'); atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
-                                    ${item.tipo === 'V' ? opcoesV : opcoesA}
-                                </select>
-                            </div>
-                        </div>`;
+
+                    if (item.tipo === 'polo') {
+                        // NOVO: layout dedicado para Tensão nos polos disjuntores (OK/NOK + Observações)
+                        // Reaproveita os mesmos IDs _val/_un para não exigir mudanças em
+                        // salvarOfflinePrev(), restauração de cache e exportação CSV.
+                        htmlMed += `
+                            <div class="check-row" id="${idBase}_row">
+                                <div class="measure-title">${item.nome}</div>
+                                <div class="check-inputs">
+                                    <select id="${idBase}_val" onchange="atualizarCorChecklist('${idBase}'); salvarOfflinePrev()">
+                                        <option value="" disabled selected>Selecionar...</option>
+                                        <option value="OK">OK</option>
+                                        <option value="NOK">NOK</option>
+                                    </select>
+                                    <input type="text" id="${idBase}_un" placeholder="Observações (Opcional)" oninput="salvarOfflinePrev()">
+                                </div>
+                            </div>`;
+                    } else {
+                        htmlMed += `
+                            <div class="measure-row" id="${idBase}_row">
+                                <div class="measure-title">${item.nome}</div>
+                                <div class="measure-inputs">
+                                    <input type="number" id="${idBase}_val" placeholder="Valor numérico" oninput="atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
+                                    <select id="${idBase}_un" onchange="verificarSemMedida('${idBase}'); atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
+                                        ${item.tipo === 'V' ? opcoesV : opcoesA}
+                                    </select>
+                                </div>
+                            </div>`;
+                    }
                 });
                 htmlMed += `</div>`;
             });
@@ -888,6 +916,11 @@
             const unEl   = document.getElementById(`${idBase}_un`);
             if (!row || !valEl || !unEl) return;
 
+            // NOVO: campos do tipo 'polo' usam <select> OK/NOK no lugar do <input number>.
+            // A cor desses campos é tratada por atualizarCorChecklist(), então aqui
+            // basta ignorar quando o elemento de valor for um SELECT (evita erro/städio incorreto).
+            if (valEl.tagName === 'SELECT') return;
+
             row.classList.remove('med-preenchida', 'med-sem-medida');
 
             if (unEl.value === '-') {
@@ -899,7 +932,10 @@
 
         function atualizarCorChecklist(idBase) {
             const row = document.getElementById(`${idBase}_row`);
-            const val = document.getElementById(`${idBase}_status`).value;
+            // Suporta tanto chk_X_Y_status (checklist) quanto med_X_Y_val (campo 'polo')
+            const elStatus = document.getElementById(`${idBase}_status`) || document.getElementById(`${idBase}_val`);
+            if (!row || !elStatus) return;
+            const val = elStatus.value;
             row.classList.remove('status-ok', 'status-nok', 'status-na');
             if (val === 'OK')  row.classList.add('status-ok');
             if (val === 'NOK') row.classList.add('status-nok');
@@ -964,18 +1000,24 @@
 
             let falha = false;
             estruturaMedicoes.forEach((g, gIdx) => {
-                g.itens.forEach((_, iIdx) => {
+                g.itens.forEach((item, iIdx) => {
                     const val = document.getElementById(`med_${gIdx}_${iIdx}_val`).value;
                     const un  = document.getElementById(`med_${gIdx}_${iIdx}_un`).value;
-                    if (un !== '-' && val === '') falha = true;
+                    if (item.tipo === 'polo') {
+                        // NOVO: campo 'polo' exige apenas OK ou NOK selecionado (observação é opcional)
+                        if (val === '') falha = true;
+                    } else {
+                        if (un !== '-' && val === '') falha = true;
+                    }
                 });
             });
 
             if (falha) {
-                alert("ERRO: Todas as medições são obrigatórias. Preencha o valor numérico ou altere a unidade para '- (Sem medida)'.");
+                alert("ERRO: Todas as medições são obrigatórias. Preencha o valor numérico (ou OK/NOK no campo de polos) ou altere a unidade para '- (Sem medida)'.");
                 return;
             }
 
+            const esc = s => `"${String(s).replace(/"/g, '""').replace(/\n/g, ' ')}"`;
             const headers = ["Data", "Base Operacional", "Nº Série WEG", "Técnico"];
             const values  = [cab.d, cab.b, cab.s, cab.t];
 
@@ -983,8 +1025,19 @@
                 g.itens.forEach((item, iIdx) => {
                     const val = document.getElementById(`med_${gIdx}_${iIdx}_val`).value;
                     const un  = document.getElementById(`med_${gIdx}_${iIdx}_un`).value;
-                    headers.push(`[${g.titulo}] ${item.nome}`);
-                    values.push(un === '-' ? '-' : `${val} ${un}`);
+
+                    if (item.tipo === 'polo') {
+                        // NOVO: exporta em duas colunas — STATUS (OK/NOK) e OBS (texto livre)
+                        // Mantém compatibilidade com o Motor_Importar_CSV do VBA, que distingue
+                        // a coluna de observação pelo sufixo "(OBS)" no header.
+                        headers.push(`[${g.titulo}] ${item.nome} (STATUS)`);
+                        values.push(val);
+                        headers.push(`[${g.titulo}] ${item.nome} (OBS)`);
+                        values.push(esc(un));
+                    } else {
+                        headers.push(`[${g.titulo}] ${item.nome}`);
+                        values.push(un === '-' ? '-' : `${val} ${un}`);
+                    }
                 });
             });
 
@@ -1097,8 +1150,13 @@
                         if (elVal && elUn) {
                             elVal.value = p.medicoes[id].val;
                             elUn.value = p.medicoes[id].un;
-                            verificarSemMedida(id);
-                            atualizarCorMedicao(id);
+                            // NOVO: campo 'polo' usa atualizarCorChecklist; os demais usam verificarSemMedida/atualizarCorMedicao
+                            if (elVal.tagName === 'SELECT') {
+                                atualizarCorChecklist(id);
+                            } else {
+                                verificarSemMedida(id);
+                                atualizarCorMedicao(id);
+                            }
                         }
                     });
                 }
