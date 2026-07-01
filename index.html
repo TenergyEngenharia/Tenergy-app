@@ -581,37 +581,182 @@
     </main>
 
     <script>
-     /* ─────────────────────────────────────────────────────────────
-           SERVICE WORKER E TEMA (IGUAL AO ANTERIOR)
+        /* ─────────────────────────────────────────────────────────────
+           SERVICE WORKER
         ───────────────────────────────────────────────────────────── */
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+
+        /* ─────────────────────────────────────────────────────────────
+           SIDEBAR & NAVEGAÇÃO SPA & TEMA
+        ───────────────────────────────────────────────────────────── */
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
-        function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
         function navTo(moduleId, elementoClicado) {
             document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active-menu'));
+
             document.getElementById(moduleId).classList.add('active');
             elementoClicado.classList.add('active-menu');
-            if (window.innerWidth < 768) toggleSidebar();
+
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
             window.scrollTo(0, 0);
         }
+
         const toggle = document.getElementById('theme-toggle');
-        function aplicarTema(escuro) { document.documentElement.setAttribute('data-theme', escuro ? 'dark' : 'light'); toggle.checked = escuro; }
+        const html   = document.documentElement;
+
+        function aplicarTema(escuro) {
+            html.setAttribute('data-theme', escuro ? 'dark' : 'light');
+            toggle.checked = escuro;
+        }
+
         aplicarTema(localStorage.getItem('git_tenergy_tema') === 'dark');
+        
         toggle.addEventListener('change', () => {
-            const escuro = toggle.checked; localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light'); aplicarTema(escuro);
+            const escuro = toggle.checked;
+            localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light');
+            aplicarTema(escuro);
         });
 
-        /* ─────────────────────────────────────────────────────────────
-           LÓGICA RDO (OMITIDA AQUI PARA BREVIDADE - MANTENHA A SUA INTACTA)
-        ───────────────────────────────────────────────────────────── */
-        // ... (O seu código das Atividades do RDO continua aqui) ...
+        /* =========================================================================
+           LÓGICA DO MÓDULO: RDO DIÁRIO
+           ========================================================================= */
+        const atividades = [
+            "Mobilização",
+            "Abertura e Preparo do solo",
+            "Instalação de eletrodutos",
+            "Base de concreto/suporte carregadores",
+            "Fixação dos carregadores",
+            "Conexões elétricas",
+            "Configuração e startup",
+            "Recomposição do solo"
+        ];
+
+        const STATUS_CLASSES = {
+            "Concluída":    "status-concluida",
+            "Em andamento": "status-andamento",
+            "Não iniciada": "status-nao-iniciada",
+            "Interrompida": "status-interrompida"
+        };
+
+        function atualizarCorAtividade(idx) {
+            const select = document.getElementById(`ativ_${idx}`);
+            const row    = document.getElementById(`row_${idx}`);
+            if (!select || !row) return;
+
+            Object.values(STATUS_CLASSES).forEach(c => row.classList.remove(c));
+            const classe = STATUS_CLASSES[select.value];
+            if (classe) row.classList.add(classe);
+        }
+
+        // Renderização dinâmica da matriz do RDO
+        const container = document.getElementById('container-atividades');
+        atividades.forEach((ativ, index) => {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="matrix-row status-nao-iniciada" id="row_${index}">
+                    <div class="matrix-title">${ativ}</div>
+                    <select id="ativ_${index}" onchange="atualizarCorAtividade(${index}); salvarOffline()">
+                        <option value="Não iniciada">Não iniciada</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluída">Concluída</option>
+                        <option value="Interrompida">Interrompida</option>
+                    </select>
+                </div>`);
+        });
+
+        function salvarOffline() {
+            const dados = {
+                local_obra:     document.getElementById('local_obra').value,
+                data_obra:      document.getElementById('data_obra').value,
+                operador:       document.getElementById('operador').value,
+                clima:          document.getElementById('clima').value,
+                ferramentas:    document.querySelector('input[name="ferramentas"]:checked').value,
+                seguranca:      document.querySelector('input[name="seguranca"]:checked').value,
+                ocorrencias:    document.getElementById('ocorrencias').value,
+                fora_escopo:    document.getElementById('fora_escopo').value,
+                observacoes:    document.getElementById('observacoes').value,
+                interferencias: document.getElementById('interferencias').value,
+                previsao:       document.getElementById('previsao').value,
+                status_ativ:    atividades.map((_, idx) => document.getElementById(`ativ_${idx}`).value)
+            };
+            localStorage.setItem('git_tenergy_cache', JSON.stringify(dados));
+        }
+
+        function limparFormulario() {
+            if (confirm("Tem certeza que deseja limpar todo o formulário de RDO e voltar ao padrão?")) {
+                localStorage.removeItem('git_tenergy_cache');
+                window.location.reload();
+            }
+        }
+
+        function exportarParaGitTenergy() {
+            const local    = document.getElementById('local_obra').value.toUpperCase().trim();
+            const dataObra = document.getElementById('data_obra').value;
+            const op       = document.getElementById('operador').value.trim();
+            const prev     = document.getElementById('previsao').value.trim();
+
+            if (!local || !dataObra || !op || !prev) {
+                alert("ERRO DE EXPORTAÇÃO: Preencha todos os campos obrigatórios (marcados com *) antes de gerar o arquivo.");
+                return;
+            }
+
+            const clima   = document.getElementById('clima').value;
+            const fer     = document.querySelector('input[name="ferramentas"]:checked').value;
+            const seg     = document.querySelector('input[name="seguranca"]:checked').value;
+            const ocor    = document.getElementById('ocorrencias').value;
+            const foraEsc = document.getElementById('fora_escopo').value;
+            const obs     = document.getElementById('observacoes').value;
+            const interf  = document.getElementById('interferencias').value;
+
+            const esc = s => `"${s.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
+            const csvHeaders = [
+                "Data da Obra", "Local da Obra", "Nome do Operador", "Condições Climáticas",
+                "Ferramentas disponíveis", "Condições de Segurança", "Ocorrências registradas",
+                "Atividades fora do escopo", "Observações do Operador", "Interferências a serem tratadas",
+                "Atividades previstas para o próximo dia"
+            ];
+
+            const csvValues = [
+                dataObra, local, op.replace(/,/g, " "), clima, fer, seg,
+                esc(ocor), esc(foraEsc), esc(obs), esc(interf), esc(prev)
+             ];
+
+            atividades.forEach((ativ, idx) => {
+                csvHeaders.push(`##### ${ativ}`);
+                csvValues.push(document.getElementById(`ativ_${idx}`).value);
+            });
+
+            const csvContent = csvHeaders.join(",") + "\r\n" + csvValues.join(",") + "\r\n";
+            const blob = new Blob(
+                [new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent],
+                { type: "text/csv;charset=utf-8;" }
+            );
+
+            const url  = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `RDO_${local}_${dataObra}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
 
         /* =========================================================================
-           LÓGICA DO MÓDULO: PREVENTIVA CARREGADORES (NOVA INTERFACE)
+           LÓGICA DO MÓDULO: PREVENTIVA CARREGADORES
            ========================================================================= */
-        const prevMedicoesDef = [
+      const prevMedicoesDef = [
             {
                 titulo: "Disjuntor Geral SAVE",
                 blocos: [
@@ -964,6 +1109,86 @@
         window.addEventListener('load', () => {
             renderPreventivaUI(); 
             carregarOfflinePrev();
+        });
+
+        /* =========================================================================
+           INICIALIZAÇÃO GLOBAL ON LOAD (RDO e PREVENTIVA)
+           ========================================================================= */
+        window.addEventListener('load', () => {
+            // 1. Inicia Lógica do RDO (Restauração de Cache)
+            const rawRDO = localStorage.getItem('git_tenergy_cache');
+            if (rawRDO) {
+                const d = JSON.parse(rawRDO);
+                document.getElementById('local_obra').value     = d.local_obra    || '';
+                document.getElementById('data_obra').value      = d.data_obra     || '';
+                document.getElementById('operador').value       = d.operador      || '';
+                document.getElementById('clima').value          = d.clima         || 'Ensolarado';
+                document.getElementById('ocorrencias').value    = d.ocorrencias   || 'Não foram registradas ocorrências no período.';
+                document.getElementById('fora_escopo').value    = d.fora_escopo   || 'Sem atividades fora do escopo';
+                document.getElementById('observacoes').value    = d.observacoes   || 'Sem observações';
+                document.getElementById('interferencias').value = d.interferencias || 'Nenhuma interferência externa mapeada.';
+                document.getElementById('previsao').value       = d.previsao      || '';
+
+                if (d.ferramentas) {
+                    const el = document.querySelector(`input[name="ferramentas"][value="${d.ferramentas}"]`);
+                    if (el) el.checked = true;
+                }
+                if (d.seguranca) {
+                    const el = document.querySelector(`input[name="seguranca"][value="${d.seguranca}"]`);
+                    if (el) el.checked = true;
+                }
+                if (d.status_ativ) {
+                    d.status_ativ.forEach((val, idx) => {
+                        const el = document.getElementById(`ativ_${idx}`);
+                        if (el) {
+                            el.value = val;
+                            atualizarCorAtividade(idx);
+                        }
+                    });
+                }
+            }
+
+            // 2. Inicia Lógica da Preventiva (Renderização e Restauração)
+            renderPreventivaUI();
+            
+            const rawPrev = localStorage.getItem('git_tenergy_prev_cache');
+            if (rawPrev) {
+                const p = JSON.parse(rawPrev);
+                if (p.base) document.getElementById('prev_base').value = p.base;
+                if (p.serie) document.getElementById('prev_serie').value = p.serie;
+                if (p.data) document.getElementById('prev_data').value = p.data;
+                if (p.tecnico) document.getElementById('prev_tecnico').value = p.tecnico;
+
+                if (p.medicoes) {
+                    Object.keys(p.medicoes).forEach(id => {
+                        const elVal = document.getElementById(`${id}_val`);
+                        const elUn  = document.getElementById(`${id}_un`);
+                        if (elVal && elUn) {
+                            elVal.value = p.medicoes[id].val;
+                            elUn.value = p.medicoes[id].un;
+                            // NOVO: campo 'polo' usa atualizarCorChecklist; os demais usam verificarSemMedida/atualizarCorMedicao
+                            if (elVal.tagName === 'SELECT') {
+                                atualizarCorChecklist(id);
+                            } else {
+                                verificarSemMedida(id);
+                                atualizarCorMedicao(id);
+                            }
+                        }
+                    });
+                }
+
+                if (p.checklist) {
+                    Object.keys(p.checklist).forEach(id => {
+                        const elStatus = document.getElementById(`${id}_status`);
+                        const elObs    = document.getElementById(`${id}_obs`);
+                        if (elStatus && elObs) {
+                            elStatus.value = p.checklist[id].status;
+                            elObs.value = p.checklist[id].obs;
+                            atualizarCorChecklist(id);
+                        }
+                    });
+                }
+            }
         });
     </script>
 </body>
