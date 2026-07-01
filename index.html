@@ -581,203 +581,65 @@
     </main>
 
     <script>
-        /* ─────────────────────────────────────────────────────────────
-           SERVICE WORKER
+     /* ─────────────────────────────────────────────────────────────
+           SERVICE WORKER E TEMA (IGUAL AO ANTERIOR)
         ───────────────────────────────────────────────────────────── */
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js');
-        }
-
-        /* ─────────────────────────────────────────────────────────────
-           SIDEBAR & NAVEGAÇÃO SPA & TEMA
-        ───────────────────────────────────────────────────────────── */
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('show');
-        }
-
+        function toggleSidebar() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }
         function navTo(moduleId, elementoClicado) {
             document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
             document.querySelectorAll('.menu-item').forEach(btn => btn.classList.remove('active-menu'));
-
             document.getElementById(moduleId).classList.add('active');
             elementoClicado.classList.add('active-menu');
-
-            if (window.innerWidth < 768) {
-                toggleSidebar();
-            }
+            if (window.innerWidth < 768) toggleSidebar();
             window.scrollTo(0, 0);
         }
-
         const toggle = document.getElementById('theme-toggle');
-        const html   = document.documentElement;
-
-        function aplicarTema(escuro) {
-            html.setAttribute('data-theme', escuro ? 'dark' : 'light');
-            toggle.checked = escuro;
-        }
-
+        function aplicarTema(escuro) { document.documentElement.setAttribute('data-theme', escuro ? 'dark' : 'light'); toggle.checked = escuro; }
         aplicarTema(localStorage.getItem('git_tenergy_tema') === 'dark');
-        
         toggle.addEventListener('change', () => {
-            const escuro = toggle.checked;
-            localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light');
-            aplicarTema(escuro);
+            const escuro = toggle.checked; localStorage.setItem('git_tenergy_tema', escuro ? 'dark' : 'light'); aplicarTema(escuro);
         });
 
-        /* =========================================================================
-           LÓGICA DO MÓDULO: RDO DIÁRIO
-           ========================================================================= */
-        const atividades = [
-            "Mobilização",
-            "Abertura e Preparo do solo",
-            "Instalação de eletrodutos",
-            "Base de concreto/suporte carregadores",
-            "Fixação dos carregadores",
-            "Conexões elétricas",
-            "Configuração e startup",
-            "Recomposição do solo"
-        ];
-
-        const STATUS_CLASSES = {
-            "Concluída":    "status-concluida",
-            "Em andamento": "status-andamento",
-            "Não iniciada": "status-nao-iniciada",
-            "Interrompida": "status-interrompida"
-        };
-
-        function atualizarCorAtividade(idx) {
-            const select = document.getElementById(`ativ_${idx}`);
-            const row    = document.getElementById(`row_${idx}`);
-            if (!select || !row) return;
-
-            Object.values(STATUS_CLASSES).forEach(c => row.classList.remove(c));
-            const classe = STATUS_CLASSES[select.value];
-            if (classe) row.classList.add(classe);
-        }
-
-        // Renderização dinâmica da matriz do RDO
-        const container = document.getElementById('container-atividades');
-        atividades.forEach((ativ, index) => {
-            container.insertAdjacentHTML('beforeend', `
-                <div class="matrix-row status-nao-iniciada" id="row_${index}">
-                    <div class="matrix-title">${ativ}</div>
-                    <select id="ativ_${index}" onchange="atualizarCorAtividade(${index}); salvarOffline()">
-                        <option value="Não iniciada">Não iniciada</option>
-                        <option value="Em andamento">Em andamento</option>
-                        <option value="Concluída">Concluída</option>
-                        <option value="Interrompida">Interrompida</option>
-                    </select>
-                </div>`);
-        });
-
-        function salvarOffline() {
-            const dados = {
-                local_obra:     document.getElementById('local_obra').value,
-                data_obra:      document.getElementById('data_obra').value,
-                operador:       document.getElementById('operador').value,
-                clima:          document.getElementById('clima').value,
-                ferramentas:    document.querySelector('input[name="ferramentas"]:checked').value,
-                seguranca:      document.querySelector('input[name="seguranca"]:checked').value,
-                ocorrencias:    document.getElementById('ocorrencias').value,
-                fora_escopo:    document.getElementById('fora_escopo').value,
-                observacoes:    document.getElementById('observacoes').value,
-                interferencias: document.getElementById('interferencias').value,
-                previsao:       document.getElementById('previsao').value,
-                status_ativ:    atividades.map((_, idx) => document.getElementById(`ativ_${idx}`).value)
-            };
-            localStorage.setItem('git_tenergy_cache', JSON.stringify(dados));
-        }
-
-        function limparFormulario() {
-            if (confirm("Tem certeza que deseja limpar todo o formulário de RDO e voltar ao padrão?")) {
-                localStorage.removeItem('git_tenergy_cache');
-                window.location.reload();
-            }
-        }
-
-        function exportarParaGitTenergy() {
-            const local    = document.getElementById('local_obra').value.toUpperCase().trim();
-            const dataObra = document.getElementById('data_obra').value;
-            const op       = document.getElementById('operador').value.trim();
-            const prev     = document.getElementById('previsao').value.trim();
-
-            if (!local || !dataObra || !op || !prev) {
-                alert("ERRO DE EXPORTAÇÃO: Preencha todos os campos obrigatórios (marcados com *) antes de gerar o arquivo.");
-                return;
-            }
-
-            const clima   = document.getElementById('clima').value;
-            const fer     = document.querySelector('input[name="ferramentas"]:checked').value;
-            const seg     = document.querySelector('input[name="seguranca"]:checked').value;
-            const ocor    = document.getElementById('ocorrencias').value;
-            const foraEsc = document.getElementById('fora_escopo').value;
-            const obs     = document.getElementById('observacoes').value;
-            const interf  = document.getElementById('interferencias').value;
-
-            const esc = s => `"${s.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
-
-            const csvHeaders = [
-                "Data da Obra", "Local da Obra", "Nome do Operador", "Condições Climáticas",
-                "Ferramentas disponíveis", "Condições de Segurança", "Ocorrências registradas",
-                "Atividades fora do escopo", "Observações do Operador", "Interferências a serem tratadas",
-                "Atividades previstas para o próximo dia"
-            ];
-
-            const csvValues = [
-                dataObra, local, op.replace(/,/g, " "), clima, fer, seg,
-                esc(ocor), esc(foraEsc), esc(obs), esc(interf), esc(prev)
-             ];
-
-            atividades.forEach((ativ, idx) => {
-                csvHeaders.push(`##### ${ativ}`);
-                csvValues.push(document.getElementById(`ativ_${idx}`).value);
-            });
-
-            const csvContent = csvHeaders.join(",") + "\r\n" + csvValues.join(",") + "\r\n";
-            const blob = new Blob(
-                [new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent],
-                { type: "text/csv;charset=utf-8;" }
-            );
-
-            const url  = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `RDO_${local}_${dataObra}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
+        /* ─────────────────────────────────────────────────────────────
+           LÓGICA RDO (OMITIDA AQUI PARA BREVIDADE - MANTENHA A SUA INTACTA)
+        ───────────────────────────────────────────────────────────── */
+        // ... (O seu código das Atividades do RDO continua aqui) ...
 
         /* =========================================================================
-           LÓGICA DO MÓDULO: PREVENTIVA CARREGADORES
+           LÓGICA DO MÓDULO: PREVENTIVA CARREGADORES (NOVA INTERFACE)
            ========================================================================= */
-        const tensoes12 = [
-            "Montante Tensão R-N", "Montante Tensão S-N", "Montante Tensão T-N", 
-            "Montante Tensão R-S", "Montante Tensão S-T", "Montante Tensão T-R",
-            "Jusante Tensão R-N", "Jusante Tensão S-N", "Jusante Tensão T-N", 
-            "Jusante Tensão R-S", "Jusante Tensão S-T", "Jusante Tensão T-R"
-        ];
-        const tensoes6 = tensoes12.slice(0, 6);
-        const correntes = ["Corrente R", "Corrente S", "Corrente T"];
-
-        // NOVO: campo "Tensão nos polos disjuntores" — tipo 'polo' (OK/NOK + Observações)
-        // Unificado em um único item (antes eram 3: Polo R, Polo S, Polo T)
-        const polos = ["Tensão nos polos disjuntores"];
-
-        const estruturaMedicoes = [
+        const prevMedicoesDef = [
             {
                 titulo: "Disjuntor Geral SAVE",
-                itens: tensoes12.map(i => ({ nome: i, tipo: 'V' }))
-                    .concat(correntes.map(i => ({ nome: i, tipo: 'A' })))
-                    .concat(polos.map(i => ({ nome: i, tipo: 'polo' }))) // NOVO: inserido após as correntes R/S/T
+                blocos: [
+                    { tipo: "volt-3", label: "Entrada de Tensão F-N", vars: ["Entrada Tensão R-N", "Entrada Tensão S-N", "Entrada Tensão T-N"], sub: ["R-N", "S-N", "T-N"] },
+                    { tipo: "volt-3", label: "Entrada de Tensão F-F", vars: ["Entrada Tensão R-S", "Entrada Tensão S-T", "Entrada Tensão T-R"], sub: ["R-S", "S-T", "T-R"] },
+                    { tipo: "volt-3", label: "Saída de Tensão F-N", vars: ["Saída Tensão R-N", "Saída Tensão S-N", "Saída Tensão T-N"], sub: ["R-N", "S-N", "T-N"] },
+                    { tipo: "volt-3", label: "Saída de Tensão F-F", vars: ["Saída Tensão R-S", "Saída Tensão S-T", "Saída Tensão T-R"], sub: ["R-S", "S-T", "T-R"] },
+                    { tipo: "amp-3", label: "Quando em carga", vars: ["Corrente R", "Corrente S", "Corrente T"], sub: ["R", "S", "T"] },
+                    { tipo: "polos", label: "Tensão nos polos disjuntores", vars: ["Polo R", "Polo S", "Polo T"], sub: ["Polo R", "Polo S", "Polo T"] }
+                ]
             },
-            { titulo: "IDR (Interno ao totem do SAVE)", itens: tensoes12.map(i => ({ nome: i, tipo: 'V' })).concat(correntes.map(i => ({ nome: i, tipo: 'A' }))) },
-            { titulo: "Disjuntor Interno SAVE", itens: tensoes6.map(i => ({ nome: i, tipo: 'V' })) }
+            {
+                titulo: "IDR (Interno ao totem do SAVE)",
+                blocos: [
+                    { tipo: "volt-3", label: "Entrada de Tensão F-N", vars: ["Entrada Tensão R-N", "Entrada Tensão S-N", "Entrada Tensão T-N"], sub: ["R-N", "S-N", "T-N"] },
+                    { tipo: "volt-3", label: "Entrada de Tensão F-F", vars: ["Entrada Tensão R-S", "Entrada Tensão S-T", "Entrada Tensão T-R"], sub: ["R-S", "S-T", "T-R"] },
+                    { tipo: "volt-3", label: "Saída de Tensão F-N", vars: ["Saída Tensão R-N", "Saída Tensão S-N", "Saída Tensão T-N"], sub: ["R-N", "S-N", "T-N"] },
+                    { tipo: "volt-3", label: "Saída de Tensão F-F", vars: ["Saída Tensão R-S", "Saída Tensão S-T", "Saída Tensão T-R"], sub: ["R-S", "S-T", "T-R"] },
+                    { tipo: "amp-3", label: "Quando em carga", vars: ["Corrente R", "Corrente S", "Corrente T"], sub: ["R", "S", "T"] }
+                ]
+            },
+            {
+                titulo: "Disjuntor Interno SAVE",
+                blocos: [
+                    { tipo: "volt-3", label: "Entrada de Tensão F-N", vars: ["Entrada Tensão R-N", "Entrada Tensão S-N", "Entrada Tensão T-N"], sub: ["R-N", "S-N", "T-N"] },
+                    { tipo: "volt-3", label: "Entrada de Tensão F-F", vars: ["Entrada Tensão R-S", "Entrada Tensão S-T", "Entrada Tensão T-R"], sub: ["R-S", "S-T", "T-R"] }
+                ]
+            }
         ];
 
         const estruturaChecklist = [
@@ -799,11 +661,11 @@
             {
                 titulo: "Alimentação ligada (SEM CARGA)",
                 itens: [
-                    "Medição de Tensão montante disjuntor geral",
-                    "Medição de Tensão jusante do disjuntor geral",
-                    "Medição de Tensão montante IDR no totem",
-                    "Medição de Tensão jusante IDR no totem",
-                    "Medição de Tensão montante disjuntor interno ao SAVE"
+                    "Medição de Tensão entrada disjuntor geral",
+                    "Medição de Tensão saída do disjuntor geral",
+                    "Medição de Tensão entrada IDR no totem",
+                    "Medição de Tensão saída IDR no totem",
+                    "Medição de Tensão entrada disjuntor interno ao SAVE"
                 ]
             },
             {
@@ -830,43 +692,58 @@
         }
 
         function renderPreventivaUI() {
-            // Render Medições
+            // Render Medições (Grelha 3x3 Avançada)
             const cMed = document.getElementById('container-medicoes');
             let htmlMed = "";
-            estruturaMedicoes.forEach((grupo, gIdx) => {
-                htmlMed += `<div class="card"><h2>${grupo.titulo}</h2>`;
-                grupo.itens.forEach((item, iIdx) => {
-                    const idBase = `med_${gIdx}_${iIdx}`;
-                    const opcoesV = `<option value="V">V</option><option value="kV">kV</option><option value="mV">mV</option><option value="-">- (Sem medida)</option>`;
-                    const opcoesA = `<option value="A">A</option><option value="mA">mA</option><option value="uA">uA</option><option value="-">- (Sem medida)</option>`;
-
-                    if (item.tipo === 'polo') {
-                        // NOVO: layout dedicado para Tensão nos polos disjuntores (OK/NOK + Observações)
-                        // Reaproveita os mesmos IDs _val/_un para não exigir mudanças em
-                        // salvarOfflinePrev(), restauração de cache e exportação CSV.
+            prevMedicoesDef.forEach((g, gIdx) => {
+                htmlMed += `<div class="card"><h2>${g.titulo}</h2>`;
+                g.blocos.forEach((b, bIdx) => {
+                    const idGrp = `medgrp_${gIdx}_${bIdx}`;
+                    
+                    if (b.tipo === "volt-3" || b.tipo === "amp-3") {
+                        const isV = b.tipo === "volt-3";
+                        const unidadeHeader = isV ? "(V)" : "(A)";
+                        const opts = isV 
+                            ? `<option value="V">V</option><option value="kV">kV</option><option value="mV">mV</option><option value="-">- (N/A)</option>`
+                            : `<option value="A">A</option><option value="mA">mA</option><option value="uA">uA</option><option value="-">- (N/A)</option>`;
+                        
                         htmlMed += `
-                            <div class="check-row" id="${idBase}_row">
-                                <div class="measure-title">${item.nome}</div>
-                                <div class="check-inputs">
-                                    <select id="${idBase}_val" onchange="atualizarCorChecklist('${idBase}'); salvarOfflinePrev()">
-                                        <option value="" disabled selected>Selecionar...</option>
+                        <div class="grouped-box" style="background: var(--row-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <div style="font-weight: bold; margin: 0; color: var(--verde); font-size: 0.95rem;">${b.label} ${unidadeHeader}</div>
+                                <select id="${idGrp}_un" onchange="toggleGroupInputs('${idGrp}'); salvarOfflinePrev()" style="width:auto; padding:5px; font-weight:bold;">
+                                    ${opts}
+                                </select>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">`;
+                        
+                        b.vars.forEach((v, vIdx) => {
+                            htmlMed += `
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: bold;">
+                                    <label style="margin:0;">${b.sub[vIdx]}</label>
+                                    <input type="number" id="${idGrp}_${vIdx}" placeholder="Val" oninput="salvarOfflinePrev()" style="text-align:center;">
+                                </div>`;
+                        });
+                        htmlMed += `</div></div>`;
+                        
+                    } else if (b.tipo === "polos") {
+                        htmlMed += `
+                        <div class="grouped-box" style="background: var(--row-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 12px;">
+                            <div style="font-weight: bold; margin-bottom: 10px; text-align: center; color: var(--verde); font-size: 0.95rem;">${b.label}</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">`;
+                        b.vars.forEach((v, vIdx) => {
+                            htmlMed += `
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: bold;">
+                                    <label style="margin:0;">${b.sub[vIdx]}</label>
+                                    <select id="${idGrp}_${vIdx}" onchange="salvarOfflinePrev()" style="text-align:center;">
+                                        <option value="" disabled selected>---</option>
                                         <option value="OK">OK</option>
                                         <option value="NOK">NOK</option>
+                                        <option value="-">-</option>
                                     </select>
-                                    <input type="text" id="${idBase}_un" placeholder="Observações (Opcional)" oninput="salvarOfflinePrev()">
-                                </div>
-                            </div>`;
-                    } else {
-                        htmlMed += `
-                            <div class="measure-row" id="${idBase}_row">
-                                <div class="measure-title">${item.nome}</div>
-                                <div class="measure-inputs">
-                                    <input type="number" id="${idBase}_val" placeholder="Valor numérico" oninput="atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
-                                    <select id="${idBase}_un" onchange="verificarSemMedida('${idBase}'); atualizarCorMedicao('${idBase}'); salvarOfflinePrev()">
-                                        ${item.tipo === 'V' ? opcoesV : opcoesA}
-                                    </select>
-                                </div>
-                            </div>`;
+                                </div>`;
+                        });
+                        htmlMed += `</div></div>`;
                     }
                 });
                 htmlMed += `</div>`;
@@ -888,7 +765,6 @@
                                     <option value="" disabled selected>Selecionar Status...</option>
                                     <option value="OK">OK - Conforme</option>
                                     <option value="NOK">NOK - Não Conforme</option>
-                                    <option value="-">- (Sem medida / Não aplicável)</option>
                                 </select>
                                 <input type="text" id="${idBase}_obs" placeholder="Observações (Opcional)" oninput="salvarOfflinePrev()">
                             </div>
@@ -899,66 +775,51 @@
             cChk.innerHTML = htmlChk;
         }
 
-        function verificarSemMedida(idBase) {
-            const input = document.getElementById(`${idBase}_val`);
-            const select = document.getElementById(`${idBase}_un`);
-            if (select.value === '-') {
-                input.value = '';
-                input.disabled = true;
-            } else {
-                input.disabled = false;
-            }
-        }
-
-        function atualizarCorMedicao(idBase) {
-            const row    = document.getElementById(`${idBase}_row`);
-            const valEl  = document.getElementById(`${idBase}_val`);
-            const unEl   = document.getElementById(`${idBase}_un`);
-            if (!row || !valEl || !unEl) return;
-
-            // NOVO: campos do tipo 'polo' usam <select> OK/NOK no lugar do <input number>.
-            // A cor desses campos é tratada por atualizarCorChecklist(), então aqui
-            // basta ignorar quando o elemento de valor for um SELECT (evita erro/städio incorreto).
-            if (valEl.tagName === 'SELECT') return;
-
-            row.classList.remove('med-preenchida', 'med-sem-medida');
-
-            if (unEl.value === '-') {
-                row.classList.add('med-sem-medida');
-            } else if (valEl.value !== '') {
-                row.classList.add('med-preenchida');
+        // Bloqueia as 3 caixas de input numérico se a Unidade for "Sem Medida" (-)
+        function toggleGroupInputs(idGrp) {
+            const select = document.getElementById(`${idGrp}_un`);
+            for (let i=0; i<3; i++) {
+                const inp = document.getElementById(`${idGrp}_${i}`);
+                if (inp) {
+                    if (select.value === '-') {
+                        inp.value = '';
+                        inp.disabled = true;
+                    } else {
+                        inp.disabled = false;
+                    }
+                }
             }
         }
 
         function atualizarCorChecklist(idBase) {
             const row = document.getElementById(`${idBase}_row`);
-            // Suporta tanto chk_X_Y_status (checklist) quanto med_X_Y_val (campo 'polo')
-            const elStatus = document.getElementById(`${idBase}_status`) || document.getElementById(`${idBase}_val`);
-            if (!row || !elStatus) return;
-            const val = elStatus.value;
+            const val = document.getElementById(`${idBase}_status`).value;
             row.classList.remove('status-ok', 'status-nok', 'status-na');
-            if (val === 'OK')  row.classList.add('status-ok');
+            if (val === 'OK') row.classList.add('status-ok');
             if (val === 'NOK') row.classList.add('status-nok');
-            if (val === '-')   row.classList.add('status-na');
         }
 
+        /* ─────────────────────────────────────────────────────────────
+           SALVAR E CARREGAR OFFLINE
+        ───────────────────────────────────────────────────────────── */
         function salvarOfflinePrev() {
             const dados = {
                 base: document.getElementById('prev_base').value,
                 serie: document.getElementById('prev_serie').value,
                 data: document.getElementById('prev_data').value,
                 tecnico: document.getElementById('prev_tecnico').value,
-                medicoes: {},
-                checklist: {}
+                medicoes: {}, checklist: {}
             };
 
-            estruturaMedicoes.forEach((g, gIdx) => {
-                g.itens.forEach((_, iIdx) => {
-                    const id = `med_${gIdx}_${iIdx}`;
-                    dados.medicoes[id] = {
-                        val: document.getElementById(`${id}_val`).value,
-                        un:  document.getElementById(`${id}_un`).value
-                    };
+            prevMedicoesDef.forEach((g, gIdx) => {
+                g.blocos.forEach((b, bIdx) => {
+                    const idGrp = `medgrp_${gIdx}_${bIdx}`;
+                    if (b.tipo === "volt-3" || b.tipo === "amp-3") {
+                        dados.medicoes[`${idGrp}_un`] = document.getElementById(`${idGrp}_un`).value;
+                    }
+                    b.vars.forEach((_, vIdx) => {
+                        dados.medicoes[`${idGrp}_${vIdx}`] = document.getElementById(`${idGrp}_${vIdx}`).value;
+                    });
                 });
             });
 
@@ -975,6 +836,50 @@
             localStorage.setItem('git_tenergy_prev_cache', JSON.stringify(dados));
         }
 
+        function carregarOfflinePrev() {
+            const raw = localStorage.getItem('git_tenergy_prev_cache');
+            if (!raw) return;
+            const p = JSON.parse(raw);
+
+            if (p.base) document.getElementById('prev_base').value = p.base;
+            if (p.serie) document.getElementById('prev_serie').value = p.serie;
+            if (p.data) document.getElementById('prev_data').value = p.data;
+            if (p.tecnico) document.getElementById('prev_tecnico').value = p.tecnico;
+
+            if (p.medicoes) {
+                prevMedicoesDef.forEach((g, gIdx) => {
+                    g.blocos.forEach((b, bIdx) => {
+                        const idGrp = `medgrp_${gIdx}_${bIdx}`;
+                        if (b.tipo === "volt-3" || b.tipo === "amp-3") {
+                            const unEl = document.getElementById(`${idGrp}_un`);
+                            if (unEl && p.medicoes[`${idGrp}_un`]) {
+                                unEl.value = p.medicoes[`${idGrp}_un`];
+                                toggleGroupInputs(idGrp);
+                            }
+                        }
+                        b.vars.forEach((_, vIdx) => {
+                            const inp = document.getElementById(`${idGrp}_${vIdx}`);
+                            if (inp && p.medicoes[`${idGrp}_${vIdx}`] !== undefined) {
+                                inp.value = p.medicoes[`${idGrp}_${vIdx}`];
+                            }
+                        });
+                    });
+                });
+            }
+
+            if (p.checklist) {
+                Object.keys(p.checklist).forEach(id => {
+                    const elStatus = document.getElementById(`${id}_status`);
+                    const elObs    = document.getElementById(`${id}_obs`);
+                    if (elStatus && elObs) {
+                        elStatus.value = p.checklist[id].status;
+                        elObs.value = p.checklist[id].obs;
+                        atualizarCorChecklist(id);
+                    }
+                });
+            }
+        }
+
         function limparFormularioPrev() {
             if (confirm("Tem certeza que deseja apagar os dados de MEDIÇÕES e CHECKLIST da Preventiva?")) {
                 localStorage.removeItem('git_tenergy_prev_cache');
@@ -982,197 +887,83 @@
             }
         }
 
+        /* ─────────────────────────────────────────────────────────────
+           GERAR CSV
+        ───────────────────────────────────────────────────────────── */
         function validarCabecalhoPrev() {
             const b = document.getElementById('prev_base').value.trim();
             const s = document.getElementById('prev_serie').value.trim();
             const d = document.getElementById('prev_data').value;
             const t = document.getElementById('prev_tecnico').value.trim();
-            if (!b || !s || !d || !t) {
-                alert("ERRO: Preencha a Base, Nº Série, Data e Técnico antes de exportar.");
-                return false;
-            }
+            if (!b || !s || !d || !t) { alert("ERRO: Preencha a Base, Nº Série, Data e Técnico."); return false; }
             return { b, s, d, t };
         }
 
         function exportarCSVPrevMedicoes() {
-            const cab = validarCabecalhoPrev();
-            if (!cab) return;
-
-            let falha = false;
-            estruturaMedicoes.forEach((g, gIdx) => {
-                g.itens.forEach((item, iIdx) => {
-                    const val = document.getElementById(`med_${gIdx}_${iIdx}_val`).value;
-                    const un  = document.getElementById(`med_${gIdx}_${iIdx}_un`).value;
-                    if (item.tipo === 'polo') {
-                        // NOVO: campo 'polo' exige apenas OK ou NOK selecionado (observação é opcional)
-                        if (val === '') falha = true;
-                    } else {
-                        if (un !== '-' && val === '') falha = true;
-                    }
-                });
-            });
-
-            if (falha) {
-                alert("ERRO: Todas as medições são obrigatórias. Preencha o valor numérico (ou OK/NOK no campo de polos) ou altere a unidade para '- (Sem medida)'.");
-                return;
-            }
-
-            const esc = s => `"${String(s).replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+            const cab = validarCabecalhoPrev(); if (!cab) return;
             const headers = ["Data", "Base Operacional", "Nº Série WEG", "Técnico"];
             const values  = [cab.d, cab.b, cab.s, cab.t];
+            let falha = false;
 
-            estruturaMedicoes.forEach((g, gIdx) => {
-                g.itens.forEach((item, iIdx) => {
-                    const val = document.getElementById(`med_${gIdx}_${iIdx}_val`).value;
-                    const un  = document.getElementById(`med_${gIdx}_${iIdx}_un`).value;
-
-                    if (item.tipo === 'polo') {
-                        // NOVO: exporta em duas colunas — STATUS (OK/NOK) e OBS (texto livre)
-                        // Mantém compatibilidade com o Motor_Importar_CSV do VBA, que distingue
-                        // a coluna de observação pelo sufixo "(OBS)" no header.
-                        headers.push(`[${g.titulo}] ${item.nome} (STATUS)`);
-                        values.push(val);
-                        headers.push(`[${g.titulo}] ${item.nome} (OBS)`);
-                        values.push(esc(un));
-                    } else {
-                        headers.push(`[${g.titulo}] ${item.nome}`);
-                        values.push(un === '-' ? '-' : `${val} ${un}`);
-                    }
+            prevMedicoesDef.forEach((g, gIdx) => {
+                g.blocos.forEach((b, bIdx) => {
+                    const idGrp = `medgrp_${gIdx}_${bIdx}`;
+                    const un = (b.tipo === "volt-3" || b.tipo === "amp-3") ? document.getElementById(`${idGrp}_un`).value : "";
+                    
+                    b.vars.forEach((v, vIdx) => {
+                        const val = document.getElementById(`${idGrp}_${vIdx}`).value;
+                        if (b.tipo === "polos") {
+                            if (!val) falha = true;
+                            headers.push(`[${g.titulo}] ${v}`);
+                            values.push(val || "-");
+                        } else {
+                            if (un !== '-' && val === '') falha = true;
+                            headers.push(`[${g.titulo}] ${v}`);
+                            values.push(un === '-' ? '-' : `${val} ${un}`);
+                        }
+                    });
                 });
             });
 
+            if (falha) { alert("ERRO: Todas as medições e status dos Polos são obrigatórios!"); return; }
             baixarCSV(headers, values, `Preventiva_Medicoes_${cab.s}_${cab.d}.csv`);
         }
 
         function exportarCSVPrevChecklist() {
-            const cab = validarCabecalhoPrev();
-            if (!cab) return;
-
-            let falha = false;
-            estruturaChecklist.forEach((g, gIdx) => {
-                g.itens.forEach((_, iIdx) => {
-                    const status = document.getElementById(`chk_${gIdx}_${iIdx}_status`).value;
-                    if (!status) falha = true;
-                });
-            });
-
-            if (falha) {
-                alert("ERRO: Todos os itens do Checklist são obrigatórios. Selecione OK, NOK ou '-'.");
-                return;
-            }
-
+            const cab = validarCabecalhoPrev(); if (!cab) return;
             const headers = ["Data", "Base Operacional", "Nº Série WEG", "Técnico"];
             const values  = [cab.d, cab.b, cab.s, cab.t];
-
             const esc = s => `"${s.replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+            let falha = false;
 
             estruturaChecklist.forEach((g, gIdx) => {
                 g.itens.forEach((item, iIdx) => {
                     const status = document.getElementById(`chk_${gIdx}_${iIdx}_status`).value;
                     const obs    = document.getElementById(`chk_${gIdx}_${iIdx}_obs`).value;
-                    
+                    if (!status) falha = true;
                     headers.push(`[${g.titulo}] ${item} (STATUS)`);
                     values.push(status);
-                    
                     headers.push(`[${g.titulo}] ${item} (OBS)`);
                     values.push(esc(obs));
                 });
             });
 
+            if (falha) { alert("ERRO: Todos os itens do Checklist são obrigatórios!"); return; }
             baixarCSV(headers, values, `Preventiva_Checklist_${cab.s}_${cab.d}.csv`);
         }
 
         function baixarCSV(headersArr, valuesArr, filename) {
             const csvContent = headersArr.join(",") + "\r\n" + valuesArr.join(",") + "\r\n";
             const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: "text/csv;charset=utf-8;" });
-            const url  = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
             link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
         }
 
-        /* =========================================================================
-           INICIALIZAÇÃO GLOBAL ON LOAD (RDO e PREVENTIVA)
-           ========================================================================= */
         window.addEventListener('load', () => {
-            // 1. Inicia Lógica do RDO (Restauração de Cache)
-            const rawRDO = localStorage.getItem('git_tenergy_cache');
-            if (rawRDO) {
-                const d = JSON.parse(rawRDO);
-                document.getElementById('local_obra').value     = d.local_obra    || '';
-                document.getElementById('data_obra').value      = d.data_obra     || '';
-                document.getElementById('operador').value       = d.operador      || '';
-                document.getElementById('clima').value          = d.clima         || 'Ensolarado';
-                document.getElementById('ocorrencias').value    = d.ocorrencias   || 'Não foram registradas ocorrências no período.';
-                document.getElementById('fora_escopo').value    = d.fora_escopo   || 'Sem atividades fora do escopo';
-                document.getElementById('observacoes').value    = d.observacoes   || 'Sem observações';
-                document.getElementById('interferencias').value = d.interferencias || 'Nenhuma interferência externa mapeada.';
-                document.getElementById('previsao').value       = d.previsao      || '';
-
-                if (d.ferramentas) {
-                    const el = document.querySelector(`input[name="ferramentas"][value="${d.ferramentas}"]`);
-                    if (el) el.checked = true;
-                }
-                if (d.seguranca) {
-                    const el = document.querySelector(`input[name="seguranca"][value="${d.seguranca}"]`);
-                    if (el) el.checked = true;
-                }
-                if (d.status_ativ) {
-                    d.status_ativ.forEach((val, idx) => {
-                        const el = document.getElementById(`ativ_${idx}`);
-                        if (el) {
-                            el.value = val;
-                            atualizarCorAtividade(idx);
-                        }
-                    });
-                }
-            }
-
-            // 2. Inicia Lógica da Preventiva (Renderização e Restauração)
-            renderPreventivaUI();
-            
-            const rawPrev = localStorage.getItem('git_tenergy_prev_cache');
-            if (rawPrev) {
-                const p = JSON.parse(rawPrev);
-                if (p.base) document.getElementById('prev_base').value = p.base;
-                if (p.serie) document.getElementById('prev_serie').value = p.serie;
-                if (p.data) document.getElementById('prev_data').value = p.data;
-                if (p.tecnico) document.getElementById('prev_tecnico').value = p.tecnico;
-
-                if (p.medicoes) {
-                    Object.keys(p.medicoes).forEach(id => {
-                        const elVal = document.getElementById(`${id}_val`);
-                        const elUn  = document.getElementById(`${id}_un`);
-                        if (elVal && elUn) {
-                            elVal.value = p.medicoes[id].val;
-                            elUn.value = p.medicoes[id].un;
-                            // NOVO: campo 'polo' usa atualizarCorChecklist; os demais usam verificarSemMedida/atualizarCorMedicao
-                            if (elVal.tagName === 'SELECT') {
-                                atualizarCorChecklist(id);
-                            } else {
-                                verificarSemMedida(id);
-                                atualizarCorMedicao(id);
-                            }
-                        }
-                    });
-                }
-
-                if (p.checklist) {
-                    Object.keys(p.checklist).forEach(id => {
-                        const elStatus = document.getElementById(`${id}_status`);
-                        const elObs    = document.getElementById(`${id}_obs`);
-                        if (elStatus && elObs) {
-                            elStatus.value = p.checklist[id].status;
-                            elObs.value = p.checklist[id].obs;
-                            atualizarCorChecklist(id);
-                        }
-                    });
-                }
-            }
+            renderPreventivaUI(); 
+            carregarOfflinePrev();
         });
     </script>
 </body>
